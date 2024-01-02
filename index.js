@@ -5,7 +5,7 @@ import connectDB from "./db.js";
 import path from "path";
 
 const app = express();
-const port = 3333;
+const port = process.env.PORT || 3333;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
