@@ -63,6 +63,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
+// verify
 router.post("/verify", async (req, res) => {
   const { token } = req.body;
   const user =  await verifyEmail(token);
@@ -138,7 +139,7 @@ router.post(
   }
 );
 
-// user get by id
+// Get user
 router.get("/profile", authenticateToken, async (req, res) => {
   try {
     const users = await User.findById(req.userId);
