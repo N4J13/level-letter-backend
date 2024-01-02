@@ -14,10 +14,7 @@ app.use(cors());
 app.use("/api/user", router);
 
 
-app.get("/" , (req,res) => {
-  const htmlFilePath = path.join(__dirname, 'index.html');
-  res.sendFile(htmlFilePath);
-})
+
 
 connectDB();
 
