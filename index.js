@@ -1,5 +1,5 @@
 import express from "express";
-import router from "./routes/userRouter.js";
+import userRouter from "./routes/userRouter.js";
 import cors from "cors";
 import connectDB from "./db.js";
 import path from "path";
@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-app.use("/api/user", router);
+app.use("/api/user", userRouter);
 
 
 

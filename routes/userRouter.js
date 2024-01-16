@@ -10,7 +10,7 @@ import { generateToken } from "../utils/jwtUtils.js";
 import { authenticateToken } from "../middleware/authMiddleware.js";
 import { sendEmail, verifyEmail } from "../utils/verifyEmail.js";
 
-const router = express.Router();
+const userRouter = express.Router();
 
 const uploadDir = path.join(ROOT_PATH, "public/uploads/user");
 
@@ -37,7 +37,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // signup
-router.post("/signup", async (req, res) => {
+userRouter.post("/signup", async (req, res) => {
   try {
     const { username, password, email } = req.body;
     const verificationToken = crypto.randomBytes(50).toString("hex");
@@ -64,7 +64,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // verify
-router.post("/verify", async (req, res) => {
+userRouter.post("/verify", async (req, res) => {
   const { token } = req.body;
   const user =  await verifyEmail(token);
   if(!user){
@@ -79,17 +79,18 @@ router.post("/verify", async (req, res) => {
 });
 
 // login
-router.post("/login", async (req, res) => {
+userRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found." });
+      return res.json({ message: "User not found" });
     }
-    const passwordMatched = bcrypt.compare(password, user.password);
+    const passwordMatched = await bcrypt.compare(password, user.password);
     if (passwordMatched) {
       const token = generateToken(user._id);
       if(!user.isVerified){
+        res.json({ message: "Email not verified , Email Sent" });
         return sendEmail(email, user.verificationToken);
       }
       res.json({
@@ -106,13 +107,13 @@ router.post("/login", async (req, res) => {
 });
 
 // get all users
-router.get("/", async (req, res) => {
+userRouter.get("/", async (req, res) => {
   const users = await User.find();
   res.json(users);
 });
 
 //update profile pic and  username
-router.post(
+userRouter.post(
   "/profile/:id",
   authenticateToken,
   upload.single("profile"),
@@ -140,7 +141,7 @@ router.post(
 );
 
 // Get user
-router.get("/profile", authenticateToken, async (req, res) => {
+userRouter.get("/profile", authenticateToken, async (req, res) => {
   try {
     const users = await User.findById(req.userId);
     if (users == null) {
@@ -154,9 +155,9 @@ router.get("/profile", authenticateToken, async (req, res) => {
 });
 
 // Delete user by id
-router.delete("/:id", async (req, res) => {
+userRouter.delete("/:id", async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   res.json(user);
 });
 
-export default router;
+export default userRouter;
