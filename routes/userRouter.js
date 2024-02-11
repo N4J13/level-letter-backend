@@ -155,9 +155,16 @@ userRouter.get("/profile", authenticateToken, async (req, res) => {
 });
 
 // Delete user by id
-userRouter.delete("/:id", async (req, res) => {
+userRouter.delete("/:id", authenticateToken , async (req, res) => {
+  if(req.params.id != req.userId){
+    return res.status(401).json({ message: "Unauthorized" });
+  }
   const user = await User.findByIdAndDelete(req.params.id);
   res.json(user);
 });
+
+// Send Friend Request
+
+
 
 export default userRouter;

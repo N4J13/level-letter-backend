@@ -20,15 +20,31 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  favGames: {
+    type: Array,
+    default: [],
+  },
   isVerified: {
     type: Boolean,
     default: false,
   },
+  friends: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  friendRequests: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
   verificationToken: String,
 });
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
     return next();
   }
 
@@ -41,7 +57,6 @@ userSchema.pre('save', async function (next) {
     next(error);
   }
 });
-
 
 const User = mongoose.model("User", userSchema);
 
