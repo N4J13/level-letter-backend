@@ -10,7 +10,7 @@ import { generateToken } from "../utils/jwtUtils.js";
 import { authenticateToken } from "../middleware/authMiddleware.js";
 import { sendEmail, verifyEmail } from "../utils/verifyEmail.js";
 
-const userRouter = express.Router();
+const authRouter = express.Router();
 
 const uploadDir = path.join(ROOT_PATH, "public/uploads/user");
 
@@ -37,7 +37,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // signup
-userRouter.post("/signup", async (req, res) => {
+authRouter.post("/signup", async (req, res) => {
   try {
     const { username, password, email } = req.body;
     const verificationToken = crypto.randomBytes(50).toString("hex");
@@ -46,7 +46,7 @@ userRouter.post("/signup", async (req, res) => {
     sendEmail(email, verificationToken);
     res.json({
       message: "Email successfully send",
-      verificationToken : verificationToken
+      verificationToken: verificationToken,
     });
   } catch (error) {
     if (error.code === 11000 && error.keyPattern && error.keyPattern.username) {
@@ -64,22 +64,22 @@ userRouter.post("/signup", async (req, res) => {
 });
 
 // verify
-userRouter.post("/verify", async (req, res) => {
+authRouter.post("/verify", async (req, res) => {
   const { token } = req.body;
-  const user =  await verifyEmail(token);
-  if(!user){
-    return res.status(500).send("Verification Failed")
+  const user = await verifyEmail(token);
+  if (!user) {
+    return res.status(500).send("Verification Failed");
   }
-  const jwttoken =  generateToken(user._id)
+  const jwttoken = generateToken(user._id);
   res.json({
-    message : "Succesfully Registered Customer",
-    token : jwttoken,
-    userId : user._id
-  })
+    message: "Succesfully Registered Customer",
+    token: jwttoken,
+    userId: user._id,
+  });
 });
 
 // login
-userRouter.post("/login", async (req, res) => {
+authRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -89,7 +89,7 @@ userRouter.post("/login", async (req, res) => {
     const passwordMatched = await bcrypt.compare(password, user.password);
     if (passwordMatched) {
       const token = generateToken(user._id);
-      if(!user.isVerified){
+      if (!user.isVerified) {
         res.json({ message: "Email not verified , Email Sent" });
         return sendEmail(email, user.verificationToken);
       }
@@ -106,14 +106,18 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
+// logout
+
+
+
 // get all users
-userRouter.get("/", async (req, res) => {
+authRouter.get("/", async (req, res) => {
   const users = await User.find();
   res.json(users);
 });
 
 //update profile pic and  username
-userRouter.post(
+authRouter.post(
   "/profile/:id",
   authenticateToken,
   upload.single("profile"),
@@ -141,13 +145,17 @@ userRouter.post(
 );
 
 // Get user
-userRouter.get("/profile", authenticateToken, async (req, res) => {
+authRouter.get("/profile", authenticateToken, async (req, res) => {
   try {
-    const users = await User.findById(req.userId);
-    if (users == null) {
+    const user = await User.findById(req.userId);
+    if (user == null) {
       res.status(404).send("Not found");
     } else {
-      res.json(users);
+      res.json({
+        status: "success",
+        message: "User found",
+        data: user,
+      });
     }
   } catch (e) {
     res.status(500).send(e);
@@ -155,8 +163,8 @@ userRouter.get("/profile", authenticateToken, async (req, res) => {
 });
 
 // Delete user by id
-userRouter.delete("/:id", authenticateToken , async (req, res) => {
-  if(req.params.id != req.userId){
+authRouter.delete("/:id", authenticateToken, async (req, res) => {
+  if (req.params.id != req.userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   const user = await User.findByIdAndDelete(req.params.id);
@@ -165,6 +173,4 @@ userRouter.delete("/:id", authenticateToken , async (req, res) => {
 
 // Send Friend Request
 
-
-
-export default userRouter;
+export default authRouter;

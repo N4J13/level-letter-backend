@@ -1,5 +1,5 @@
 import express from "express";
-import userRouter from "./routes/userRouter.js";
+import authRouter from "./routes/authRouter.js";
 import cors from "cors";
 import connectDB from "./db.js";
 import path from "path";
@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-app.use("/api/user", userRouter);
+app.use("/api/user", authRouter);
 app.use("/api/game_process", gameProcess);
 
 app.get("/", (req, res) => {
