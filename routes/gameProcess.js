@@ -1,7 +1,7 @@
-import User from "../models/user.js";
+import User from "../models/user.model.js";
 import Game from "../models/game.js";
 import express from "express";
-import { authenticateToken } from "../middleware/authMiddleware.js";
+import { authenticateToken } from "../middleware/auth.middleware.js";
 import { addGame } from "../helpers/addGame.js";
 import CustomList from "../models/customList.js";
 
@@ -62,7 +62,7 @@ gameProcess.post("/add_to_fav", authenticateToken, async (req, res) => {
 gameProcess.post("/create_custom_list", authenticateToken, async (req, res) => {
   try {
     const userId = req.userId;
-    const { listName, games , isPrivate } = req.body;
+    const { listName, games, isPrivate } = req.body;
     const customList = {
       user: userId,
       name: listName,
@@ -73,19 +73,19 @@ gameProcess.post("/create_custom_list", authenticateToken, async (req, res) => {
     gameList.save();
     res.json({ message: "Custom List Created", data: gameList });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json(error);
   }
 });
 
 // Get custom list of a user
-gameProcess.get("/get_custom_list", authenticateToken, async (req, res) => {
+gameProcess.get("/custom_list", authenticateToken, async (req, res) => {
   const userId = req.userId;
-  const customList = await CustomList.find({ user: userId });
+  const customList = await CustomList.find({ user: userId }).populate("games");
   res.json(customList);
 });
 
 // Get custom list of a user by id
-gameProcess.get("/get_custom_list/:id", authenticateToken, async (req, res) => {
+gameProcess.get("/custom_list/:id", authenticateToken, async (req, res) => {
   const userId = req.params.id;
   const customList = await CustomList.find({ user: userId })
     .findById(req.params.id)

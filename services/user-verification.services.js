@@ -1,5 +1,5 @@
+import User from "../models/user.model.js";
 import nodemailer from "nodemailer";
-import User from "../models/user.js";
 
 export const sendEmail = (to, token) => {
   const transport = nodemailer.createTransport({
@@ -14,7 +14,7 @@ export const sendEmail = (to, token) => {
     if (err) {
       console.log(err);
     } else {
-      console.log("All set");
+      console.log(success);
     }
   });
 
@@ -34,7 +34,7 @@ export const sendEmail = (to, token) => {
   });
 };
 
-export const verifyEmail = async (token) => {
+export const verifyEmailService = async (token) => {
   const user = await User.findOne({ verificationToken: token });
   if (user) {
     user.isVerified = true;

@@ -1,43 +1,14 @@
-import express from "express";
-import User from "../models/user.js";
-import { ROOT_PATH } from "../config.js";
-import multer from "multer";
-import fs from "fs";
-import path from "path";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import User from "../models/user.model.js";
 import { generateToken } from "../utils/jwtUtils.js";
-import { authenticateToken } from "../middleware/authMiddleware.js";
-import { sendEmail, verifyEmail } from "../utils/verifyEmail.js";
+import {
+  sendEmail,
+  verifyEmailService,
+} from "../services/user-verification.services.js";
 
-const authRouter = express.Router();
-
-const uploadDir = path.join(ROOT_PATH, "public/uploads/user");
-
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const userId = req.params.id;
-    const userDir = path.join(uploadDir, userId);
-    if (!fs.existsSync(userDir)) {
-      fs.mkdirSync(userDir, { recursive: true });
-    }
-
-    cb(null, userDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueFilename = `profile_pic${path.extname(file.originalname)}`;
-    cb(null, uniqueFilename);
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// signup
-authRouter.post("/signup", async (req, res) => {
+// Signup
+export const signup = async (req, res) => {
   try {
     const { username, password, email } = req.body;
     const verificationToken = crypto.randomBytes(50).toString("hex");
@@ -61,12 +32,12 @@ authRouter.post("/signup", async (req, res) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   }
-});
+};
 
-// verify
-authRouter.post("/verify", async (req, res) => {
+// Verify Email
+export const verifyEmail = async (req, res) => {
   const { token } = req.body;
-  const user = await verifyEmail(token);
+  const user = await verifyEmailService(token);
   if (!user) {
     return res.status(500).send("Verification Failed");
   }
@@ -76,10 +47,10 @@ authRouter.post("/verify", async (req, res) => {
     token: jwttoken,
     userId: user._id,
   });
-});
+};
 
-// login
-authRouter.post("/login", async (req, res) => {
+// Login
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -104,48 +75,10 @@ authRouter.post("/login", async (req, res) => {
   } catch (e) {
     res.status(500).send(e);
   }
-});
+};
 
-// logout
-
-
-
-// get all users
-authRouter.get("/", async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
-
-//update profile pic and  username
-authRouter.post(
-  "/profile/:id",
-  authenticateToken,
-  upload.single("profile"),
-  async (req, res) => {
-    try {
-      const { username } = req.body;
-      if (req.params.id != req.userId) {
-        return res.status(500).json({ message: "Invalid user" });
-      }
-      const profilePic = req.file
-        ? path.join(req.params.id, req.file.filename)
-        : null;
-
-      const updatedUser = await User.findByIdAndUpdate(
-        req.params.id,
-        { profile_pic: profilePic, username: username },
-        { new: true }
-      );
-
-      res.send(updatedUser);
-    } catch (e) {
-      res.status(500).send(e.message);
-    }
-  }
-);
-
-// Get user
-authRouter.get("/profile", authenticateToken, async (req, res) => {
+// Get logged in user
+export const getUser = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (user == null) {
@@ -160,17 +93,13 @@ authRouter.get("/profile", authenticateToken, async (req, res) => {
   } catch (e) {
     res.status(500).send(e);
   }
-});
+};
 
 // Delete user by id
-authRouter.delete("/:id", authenticateToken, async (req, res) => {
+export const deleteUser = async (req, res) => {
   if (req.params.id != req.userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   const user = await User.findByIdAndDelete(req.params.id);
   res.json(user);
-});
-
-// Send Friend Request
-
-export default authRouter;
+};
