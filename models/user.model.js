@@ -28,6 +28,48 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  rememberPasswordToken: {
+    type: String,
+    default: null,
+  },
+  myGames: {
+    yet: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+    owned: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+    beaten: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+    toplay: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+    dropped: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+    playing: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+  },
   friends: [
     {
       type: mongoose.Schema.Types.ObjectId,

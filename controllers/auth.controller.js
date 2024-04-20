@@ -3,9 +3,10 @@ import crypto from "crypto";
 import User from "../models/user.model.js";
 import { generateToken } from "../utils/jwtUtils.js";
 import {
-  sendEmail,
+  sendForgotPasswordEmail,
+  sendVerificationEmail,
   verifyEmailService,
-} from "../services/user-verification.services.js";
+} from "../services/email.services.js";
 
 // Signup
 export const signup = async (req, res) => {
@@ -14,7 +15,7 @@ export const signup = async (req, res) => {
     const verificationToken = crypto.randomBytes(50).toString("hex");
     const newUser = new User({ username, password, email, verificationToken });
     await newUser.save();
-    sendEmail(email, verificationToken);
+    sendVerificationEmail(email, verificationToken);
     res.json({
       message: "Email successfully send",
       verificationToken: verificationToken,
@@ -62,7 +63,7 @@ export const login = async (req, res) => {
       const token = generateToken(user._id);
       if (!user.isVerified) {
         res.json({ message: "Email not verified , Email Sent" });
-        return sendEmail(email, user.verificationToken);
+        return sendVerificationEmail(email, user.verificationToken);
       }
       res.json({
         message: "Succesfully Logged in",
@@ -103,3 +104,33 @@ export const deleteUser = async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   res.json(user);
 };
+
+// Request password reset
+export const requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).send("User not found");
+  }
+  const token = crypto.randomBytes(50).toString("hex");
+  user.rememberPasswordToken = token;
+  await user.save();
+  sendForgotPasswordEmail(email, token);
+  res.json({ message: "Email sent", token });
+}
+
+// Reset password
+
+export const resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  const user = await User.findOne({ rememberPasswordToken: token });
+  if (!user) {
+    return res.status(404).send("User not found");
+  }
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+  user.password = hash;
+  user.rememberPasswordToken = null;
+  await user.save();
+  res.json({ message: "Password reset successfully" });
+}
