@@ -1,4 +1,4 @@
-import Game from "../models/game.js";
+import Game from "../models/game.model.js";
 import axios from "axios";
 
 export const addGame = async (gameId) => {

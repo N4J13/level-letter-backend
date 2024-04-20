@@ -2,9 +2,7 @@ import express from "express";
 import authRouter from "./routes/auth.router.js";
 import cors from "cors";
 import connectDB from "./db.js";
-import path from "path";
-import gameProcess from "./routes/gameProcess.js";
-import gameRouter from "./routes/game.js";
+import gameRouter from "./routes/game.router.js";
 import userRouter from "./routes/user.router.js";
 
 const app = express();
@@ -16,7 +14,6 @@ app.use(cors());
 
 app.use("/api/auth", authRouter);
 app.use("/api/user" , userRouter);
-app.use("/api/game_process", gameProcess);
 app.use("/api/game", gameRouter);
 
 app.get("/", (req, res) => {

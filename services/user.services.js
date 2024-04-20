@@ -1,4 +1,4 @@
-import Game from "../models/game.js";
+import Game from "../models/game.model.js";
 
 export const addByStatus = async (user, gameId, status) => {
   try {

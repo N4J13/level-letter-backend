@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const customListSchema = new mongoose.Schema({
+const collectionSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -14,12 +14,11 @@ const customListSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  
   date: {
     type: Date,
     default: Date.now,
   },
 });
 
-const CustomList = mongoose.model("CustomList", customListSchema);
-export default CustomList;
+const Collection = mongoose.model("Collection", collectionSchema);
+export default Collection;

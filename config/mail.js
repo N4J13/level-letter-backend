@@ -12,7 +12,7 @@ transport.verify(function (err, success) {
     if (err) {
         console.log(err);
     } else {
-        console.log(success);
+        console.log("server is ready to take our messages");
     }
     });
 
