@@ -1,4 +1,6 @@
+import axios from "axios";
 import Review from "../models/review.model.js";
+import { client } from "../utils/axios.js";
 
 // Get Reviews of Game by ID
 export const getReviewsOfGameById = async (req, res) => {

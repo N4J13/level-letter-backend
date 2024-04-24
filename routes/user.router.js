@@ -1,13 +1,14 @@
 import express from "express";
 import {
-  createCollection,
-  getPrivateCollections,
+  addGameToList,
+  createList,
+  deleteListById,
   getMyGames,
-  getPrivateCollectionById,
+  getPrivateListById,
+  getUserList,
+  removeGameFromList,
+  updateListById,
   updateMyGames,
-  updateCollectionById,
-  deleteCollectionById,
-  addGameToCollection,
 } from "../controllers/user.controller.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import {
@@ -24,22 +25,37 @@ userRouter.get("/mygames", authenticateToken, getMyGames);
 userRouter.post("/mygames/update", authenticateToken, updateMyGames);
 
 // Collection routes
-userRouter.get("/collections", authenticateToken, getPrivateCollections);
-userRouter.post("/collections/", authenticateToken, createCollection);
-userRouter.get("/collections/:id", authenticateToken, getPrivateCollectionById);
-userRouter.put("/collections/:id", authenticateToken, updateCollectionById);
-userRouter.delete("/collections/:id", authenticateToken, deleteCollectionById);
-userRouter.post("/collections/addgame", authenticateToken, addGameToCollection);
+userRouter
+  .route("/lists")
+  .get(authenticateToken, getUserList)
+  .post(authenticateToken, createList);
+
+userRouter
+  .route("/lists/:id")
+  .get(authenticateToken, getPrivateListById)
+  .put(authenticateToken, updateListById)
+  .delete(authenticateToken, deleteListById);
+
 userRouter.post(
-  "/collections/removegame",
+  "/lists/:id/addgame",
   authenticateToken,
-  addGameToCollection
+  addGameToList
+);
+userRouter.post(
+  "/lists/:id/removegame",
+  authenticateToken,
+  removeGameFromList
 );
 
 // Review routes
-userRouter.get("/reviews", authenticateToken, getReviewsByUserId);
-userRouter.post("/reviews", authenticateToken, addReview);
-userRouter.put("/reviews/:id", authenticateToken, updateReview);
-userRouter.delete("/reviews/:id", authenticateToken, deleteReview);
+userRouter
+  .route("/reviews")
+  .get(authenticateToken, getReviewsByUserId)
+  .post(authenticateToken, addReview);
+
+userRouter
+  .route("/reviews/:id")
+  .put(authenticateToken, updateReview)
+  .delete(authenticateToken, deleteReview);
 
 export default userRouter;

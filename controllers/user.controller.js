@@ -1,4 +1,4 @@
-import Collection from "../models/collection.model.js";
+import List from "../models/list.model.js";
 import User from "../models/user.model.js";
 import { addByStatus } from "../services/user.services.js";
 
@@ -39,59 +39,59 @@ export const getMyGames = async (req, res) => {
   }
 };
 
-// Get Collections
-export const getPrivateCollections = async (req, res) => {
+// Get List by yser ID
+export const getUserList = async (req, res) => {
   try {
     const userID = req.userId;
-    const collections = await Collection.find({ user: userID, isPrivate: true })
+    const lists = await List.find({ user: userID, isPrivate: true })
       .sort({ date: -1 })
       .populate("games");
     res.json({
-      message: "Collections fetched successfully",
-      data: collections,
+      message: "List by ID fetched successfully",
+      data: lists,
     });
   } catch (e) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// Create Collection
-export const createCollection = async (req, res) => {
+// Create List
+export const createList = async (req, res) => {
   try {
     const { name, isPrivate, games } = req.body;
     const userID = req.userId;
-    const newCollection = new Collection({
+    const newList = new List({
       name,
       isPrivate,
       games,
       user: userID,
     });
-    await newCollection.save();
+    await newList.save();
     res.json({
-      message: "Collection created successfully",
-      data: newCollection,
+      message: "List created successfully",
+      data: newList,
     });
   } catch (e) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// Update Collection
-export const updateCollectionById = async (req, res) => {
+// Update List
+export const updateListById = async (req, res) => {
   try {
     if (req.userId != req.body.user)
       return res.status(401).json({ message: "Unauthorized" });
     const collectionID = req.params.id;
-    const collection = await Collection.findByIdAndUpdate(
+    const collection = await List.findByIdAndUpdate(
       collectionID,
       req.body
     );
     if (!collection) {
-      return res.status(404).json({ message: "Collection not found" });
+      return res.status(404).json({ message: "List not found" });
     }
     await collection.save();
     res.json({
-      message: "Collection updated successfully",
+      message: "List updated successfully",
       data: collection,
     });
   } catch (e) {
@@ -99,18 +99,18 @@ export const updateCollectionById = async (req, res) => {
   }
 };
 
-// Delete Collection
-export const deleteCollectionById = async (req, res) => {
+// Delete List
+export const deleteListById = async (req, res) => {
   try {
     if (req.userId != req.body.user)
       return res.status(401).json({ message: "Unauthorized" });
     const collectionID = req.params.id;
-    const collection = await Collection.findByIdAndDelete(collectionID);
+    const collection = await List.findByIdAndDelete(collectionID);
     if (!collection) {
-      return res.status(404).json({ message: "Collection not found" });
+      return res.status(404).json({ message: "List not found" });
     }
     res.json({
-      message: "Collection deleted successfully",
+      message: "List deleted successfully",
       data: collection,
     });
   } catch (e) {
@@ -118,15 +118,15 @@ export const deleteCollectionById = async (req, res) => {
   }
 };
 
-// Add Game to Collection
-export const addGameToCollection = async (req, res) => {
+// Add Game to List
+export const addGameToList = async (req, res) => {
   try {
     if (req.userId != req.body.user)
       return res.status(401).json({ message: "Unauthorized" });
     const collectionID = req.params.id;
-    const collection = await Collection.findById(collectionID);
+    const collection = await List.findById(collectionID);
     if (!collection) {
-      return res.status(404).json({ message: "Collection not found" });
+      return res.status(404).json({ message: "List not found" });
     }
     const gameID = req.body.game;
     if (collection.games.includes(gameID)) {
@@ -143,15 +143,15 @@ export const addGameToCollection = async (req, res) => {
   }
 };
 
-// Remove Game from Collection
-export const removeGameFromCollection = async (req, res) => {
+// Remove Game from List
+export const removeGameFromList = async (req, res) => {
   try {
     if (req.userId != req.body.user)
       return res.status(401).json({ message: "Unauthorized" });
     const collectionID = req.params.id;
-    const collection = await Collection.findById(collectionID);
+    const collection = await List.findById(collectionID);
     if (!collection) {
-      return res.status(404).json({ message: "Collection not found" });
+      return res.status(404).json({ message: "List not found" });
     }
     const gameID = req.body.game;
     if (!collection.games.includes(gameID)) {
@@ -168,20 +168,20 @@ export const removeGameFromCollection = async (req, res) => {
   }
 };
 
-// Get Collection by ID
-export const getPrivateCollectionById = async (req, res) => {
+// Get List by ID
+export const getPrivateListById = async (req, res) => {
   try {
     if (req.userId != req.body.user)
       return res.status(401).json({ message: "Unauthorized" });
     const collectionID = req.params.id;
-    const collection = await Collection.findById(collectionID)
+    const collection = await List.findById(collectionID)
       .find({ isPrivate: true })
       .populate("games");
     if (!collection) {
-      return res.status(404).json({ message: "Collection not found" });
+      return res.status(404).json({ message: "List not found" });
     }
     res.json({
-      message: "Collection fetched successfully",
+      message: "List fetched successfully",
       data: collection,
     });
   } catch (e) {
