@@ -4,6 +4,8 @@ import cors from "cors";
 import connectDB from "./db.js";
 import gameRouter from "./routes/game.router.js";
 import userRouter from "./routes/user.router.js";
+import errorMiddleware from "./middleware/error.middleware.js";
+import { formatDate } from "./utils/utils.js";
 
 const app = express();
 const port = process.env.PORT || 3333;
@@ -13,8 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.use("/api/auth", authRouter);
-app.use("/api/user" , userRouter);
+app.use("/api/user", userRouter);
 app.use("/api/game", gameRouter);
+
+app.use(errorMiddleware);
 
 
 app.get("/", (req, res) => {

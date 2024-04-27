@@ -16,7 +16,7 @@ import {
   deleteReview,
   getReviewsByUserId,
   updateReview,
-} from "../controllers/game.controller.js";
+} from "../controllers/reviews.controller.js";
 
 const userRouter = express.Router();
 

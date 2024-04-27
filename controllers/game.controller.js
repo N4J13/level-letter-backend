@@ -1,111 +1,172 @@
 import axios from "axios";
-import Review from "../models/review.model.js";
-import { client } from "../utils/axios.js";
+import "dotenv/config";
+import cache from "../config/cache.js";
+import { formatDate } from "../utils/utils.js";
+import Game from "../models/game.model.js";
+import { addGameToDB } from "../services/game.services.js";
+import expressAsyncHandler from "express-async-handler";
 
-// Get Reviews of Game by ID
-export const getReviewsOfGameById = async (req, res) => {
+export const getGamesByCategory = async (req, res) => {
+  const category = req.params.category;
+  if (!category) {
+    return res.status(400).json({ message: "Category is required" });
+  }
   try {
-    const gameId = req.params.id;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const reviews = await Review.find({ game: gameId })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate("user")
-      .sort({ date: -1 });
-    if (!reviews) {
-      return res.status(404).json({ message: "Reviews not found" });
+    if (cache.has(category)) {
+      const games = cache.get(category);
+      return res.json({
+        message: "Games fetched successfully",
+        data: games,
+      });
     }
+    const response = await axios.get(
+      `https://api.rawg.io/api/games?key=${process.env.RAWG_API_KEY}&genres=${category}&d`
+    );
+    const games = response.data.results;
+    if (!games) {
+      return res.status(404).json({ message: "Games not found", data: [] });
+    }
+    cache.set(category, games, 60 * 60 * 24);
     res.json({
-      message: "Reviews found",
-      data: reviews,
+      message: "Games fetched successfully",
+      data: games,
     });
   } catch (e) {
+    console.log(e);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// Get Reviews by User ID
-export const getReviewsByUserId = async (req, res) => {
+export const getUpcomingGames = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const reviews = await Review.find({ user: userId }).populate("game");
-    if (!reviews) {
-      return res.status(404).json({ message: "Reviews not found" });
+    const date = new Date();
+    const currentDate = formatDate(new Date());
+    const endDate = formatDate(new Date(date.setMonth(date.getMonth() + 3)));
+
+    if (cache.has("upcoming")) {
+      const games = cache.get("upcoming");
+      return res.json({
+        message: "Upcoming games fetched successfully",
+        data: games,
+      });
     }
+
+    const response = await axios.get(
+      `https://api.rawg.io/api/games?key=${process.env.RAWG_API_KEY}&dates=${currentDate},${endDate}&ordering=-added`
+    );
+    const games = response.data.results;
+    if (!games) {
+      return res.status(404).json({ message: "Games not found", data: [] });
+    }
+    cache.set("upcoming", games, 60 * 60 * 24);
     res.json({
-      message: "Reviews found",
-      data: reviews,
+      message: "Upcoming games fetched successfully",
+      data: games,
     });
   } catch (e) {
+    console.log(e);
+    throw new Error("Something went wrong");
+  }
+};
+
+export const getPopularGames = async (req, res) => {
+  const currentDate = formatDate(new Date());
+  const lastYear = formatDate(
+    new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+  );
+
+  try {
+    if (cache.has("popular")) {
+      const games = cache.get("popular");
+      return res.json({
+        message: "Popular games fetched successfully",
+        data: games,
+      });
+    }
+
+    const response = await axios.get(
+      `https://api.rawg.io/api/games?key=${process.env.RAWG_API_KEY}&dates=${lastYear},${currentDate}&ordering=-rating`
+    );
+    const games = response.data.results;
+    if (!games) {
+      return res.status(404).json({ message: "Games not found", data: [] });
+    }
+    cache.set("popular", games, 60 * 60 * 24);
+    res.json({
+      message: "Popular games fetched successfully",
+      data: games,
+    });
+  } catch (e) {
+    console.log(e);
+    throw new Error("Something went wrong");
+  }
+};
+
+export const gameSearch = async (req, res) => {
+  const search = req.query.search;
+  if (!search) {
+    return res.status(400).json({ message: "Search query is required" });
+  }
+  try {
+    const response = await axios.get(
+      `https://api.rawg.io/api/games?key=${process.env.RAWG_API_KEY}&search=${search}`
+    );
+    const games = response.data.results;
+    if (!games) {
+      return res.status(404).json({ message: "Games not found", data: [] });
+    }
+    res.json({
+      message: "Games fetched successfully",
+      data: games,
+    });
+  } catch (e) {
+    console.log(e);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// Add Review
-export const addReview = async (req, res) => {
-  try {
-    const { review, rating, game } = req.body;
-    const user = req.userId;
-    const existingReview = await Review.findOne({ user, game });
-    if (existingReview) {
-      return res.status(400).json({ message: "Review already exists" });
-    }
-    const newReview = new Review({
-      user,
-      game,
-      review,
-      rating,
-    });
-    await newReview.save();
-    res.json({
-      message: "Review added successfully",
-      data: newReview,
-    });
-  } catch (e) {
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
+export const getGameById = expressAsyncHandler(async (req, res) => {
+  const gameId = req.params.id;
 
-// Delete Review
-export const deleteReview = async (req, res) => {
-  try {
-    const reviewId = req.params.id;
-    const review = await Review.findById(reviewId);
-    if (!review) {
-      return res.status(404).json({ message: "Review not found" });
-    }
-    if (review.user.toString() !== req.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    await review.remove();
-    res.json({
-      message: "Review deleted successfully",
-    });
-  } catch (e) {
-    res.status(500).json({ message: "Internal Server Error" });
+  // Check if gameId exists
+  if (!gameId) {
+    return res.status(400).json({ message: "Game ID is required" });
   }
-};
 
-// Update Review
-export const updateReview = async (req, res) => {
-  try {
-    const reviewId = req.params.id;
-    const review = await Review.findById(reviewId);
-    if (!review) {
-      return res.status(404).json({ message: "Review not found" });
-    }
-    if (review.user.toString() !== req.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    review.review = req.body.review;
-    review.rating = req.body.rating;
-    await review.save();
-    res.json({
-      message: "Review updated successfully",
-      data: review,
+  // Attempt to retrieve game from cache
+  const cachedGame = cache.get(gameId);
+  if (cachedGame) {
+    return res.json({
+      message: "Game fetched successfully from cache",
+      data: cachedGame,
     });
-  } catch (e) {
-    res.status(500).json({ message: "Internal Server Error" });
   }
-};
+
+  try {
+    // Find game in the database
+    let game = await Game.findOne({ gameId: gameId });
+
+    // If game doesn't exist in the database, add it
+    if (!game) {
+      await addGameToDB(gameId);
+      game = await Game.findOne({ gameId: gameId });
+    }
+
+    // If game still doesn't exist, return 404
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+
+    // Set the game in cache
+    cache.set(gameId, game, 60 * 60 * 24 * 7);
+
+    // Return the game data
+    return res.json({
+      message: "Game fetched successfully",
+      data: game,
+    });
+  } catch (error) {
+    // Handle any errors
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
